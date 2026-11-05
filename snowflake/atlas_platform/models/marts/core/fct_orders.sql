@@ -39,7 +39,7 @@ SELECT
     cast(campaign_id as number(38,0))                  AS campaign_id,
     cast(traffic_source as varchar)                    AS traffic_source,
     cast(has_discount as boolean)                      AS has_discount,
-    cast(order_level_discount as number(10,2))         AS order_level_discount,
+    cast(order_level_discount as number(10,2))         AS discount_amount,
     cast(item_count as number(38,0))                   AS item_count,
     cast(order_month as date)                          AS order_month,
     cast(order_week as date)                           AS order_week,
