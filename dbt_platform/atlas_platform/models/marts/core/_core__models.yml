@@ -109,6 +109,9 @@ models:
       group: core_platform
       contract:
         enforced: true
+      # v1 keeps the physical name fct_orders, so no separate latest-version view
+      latest_version_pointer:
+        enabled: false
     latest_version: 1
     versions:
       - v: 1
