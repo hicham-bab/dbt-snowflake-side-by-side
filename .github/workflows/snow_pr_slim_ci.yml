@@ -1,6 +1,13 @@
 # dbt Projects on Snowflake: Slim CI on every PR (you write it, you own it).
 # Adapted from github.com/rachaelgfriedman/snow_dbt_projects_demo and the Snowflake
 # dbt state integration doc. The dbt platform side needs none of this file.
+#
+# Requires (see snowflake/setup/04_ci_cd_oidc.sql and docs/REPLICATE.md):
+#   - GitHub environment "prod" with secret SNOWFLAKE_ACCOUNT and
+#     variables SNOWFLAKE_DATABASE=ATLAS_SNOW_PROD, SNOWFLAKE_SCHEMA=DBT_OBJECTS
+#   - Snowflake OIDC service user whose SUBJECT is repo:<org>/<repo>:environment:prod
+#   - a successful prod run of each dbt project object (the state to compare against)
+# PRs from forks get no OIDC token, so this only runs for branches in this repo.
 name: "Snowflake | PR Slim CI"
 run-name: "Slim CI for PR #${{ github.event.number }} by ${{ github.actor }}"
 on:
@@ -11,15 +18,21 @@ on:
 
 permissions:
   contents: read
-  id-token: write
+  id-token: write          # OIDC token for Snowflake workload identity
+
+concurrency:
+  group: snow-slim-ci-${{ github.event.number }}
+  cancel-in-progress: true
 
 env:
   DBT_VERSION: "2.0.0"
   PR_DB: ATLAS_SNOW_CI_PR_${{ github.event.number }}
+  CI_ROLE: ATLAS_SNOW_CI_ROLE
 
 jobs:
   slim-ci:
     name: "Slim CI: ${{ matrix.project }}"
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment: prod            # must match the OIDC subject in 04_ci_cd_oidc.sql
     strategy:
@@ -32,26 +45,33 @@ jobs:
       SNOWFLAKE_SCHEMA: ${{ vars.SNOWFLAKE_SCHEMA }}       # DBT_OBJECTS
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Snowflake CLI
-        uses: snowflakedb/snowflake-cli-action@v2.0
+        uses: snowflakedb/snowflake-cli-action@v2.0.3
         with:
           use-oidc: true
+          cli-version: "3.29.0"
 
       - run: snow connection test -x
 
       # Snowflake's tutorial clones prod per PR. With defer we only need an empty
       # database to hold the models this PR changed.
       - name: Create PR database
-        run: snow sql -x -q "CREATE DATABASE IF NOT EXISTS ${PR_DB}; CREATE SCHEMA IF NOT EXISTS ${PR_DB}.DBT_OBJECTS;"
+        run: |
+          snow sql -x --role ${CI_ROLE} -q "CREATE DATABASE IF NOT EXISTS ${PR_DB}"
+          snow sql -x --role ${CI_ROLE} -q "CREATE SCHEMA IF NOT EXISTS ${PR_DB}.DBT_OBJECTS"
 
       - name: Deploy a throwaway dbt project object for this PR
         run: |
           snow dbt deploy ${{ matrix.project }} \
             --source ./snowflake/${{ matrix.project }} \
-            --database ${PR_DB} --schema DBT_OBJECTS \
+            --database ${PR_DB} --schema DBT_OBJECTS --role ${CI_ROLE} \
             --dbt-version ${DBT_VERSION} \
             --external-access-integration DBT_EXT_ACCESS \
+            --git-commit "${{ github.event.pull_request.head.sha }}" \
+            --git-branch "${{ github.head_ref }}" \
             --no-auto-compile --force -x
 
       # state:modified+ against the last successful prod run of the SAME project.
@@ -59,8 +79,18 @@ jobs:
       - name: Build modified models + downstream (defer to prod)
         run: |
           snow dbt execute -x \
-            --database ${PR_DB} --schema DBT_OBJECTS \
+            --database ${PR_DB} --schema DBT_OBJECTS --role ${CI_ROLE} \
             --import "SYSTEM\$DBT_GET_LAST_SUCCESSFUL_RUN_TARGET('ATLAS_SNOW_PROD.DBT_OBJECTS.${{ matrix.project }}') as state" \
-            --env-vars "{\"DBT_DATABASE\": \"${PR_DB}\"}" \
+            --env-vars "{\"DBT_DATABASE\": \"${PR_DB}\", \"DBT_ROLE\": \"${CI_ROLE}\"}" \
             ${{ matrix.project }} \
             build --target dev --defer --state ./imports/state --select state:modified+
+
+      - name: Job summary
+        if: always()
+        run: |
+          {
+            echo "### Slim CI: ${{ matrix.project }} (${{ job.status }})"
+            echo "- PR database: \`${PR_DB}\`"
+            echo "- Selection: \`state:modified+\`, deferred to \`ATLAS_SNOW_PROD.DBT_OBJECTS.${{ matrix.project }}\`"
+            echo "- Row-level impact (what changed vs prod): not available here; open the log or write it yourself."
+          } >> "$GITHUB_STEP_SUMMARY"

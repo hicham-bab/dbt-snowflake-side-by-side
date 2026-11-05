@@ -21,7 +21,7 @@ Show the repo tree for 5 seconds: `snowflake/` and `dbt_platform/` hold the same
 
 **Left (terminal):** `./scripts/setup_weight.sh`
 
-> "To get dev, prod, Slim CI and scheduling for two projects on Snowflake we wrote about 280 lines across 12 files: roles, a Git integration, an external access integration so `dbt deps` works, an OIDC service user, a task graph, three GitHub Actions workflows. Every line came from Snowflake's own tutorials. Snowflake's tutorial even grants ACCOUNTADMIN to the CI user; we scoped it down. That's a decision your team now owns."
+> "To get dev, prod, Slim CI and scheduling for two projects on Snowflake we wrote about 300 lines across 12 files: roles, a Git integration, an external access integration so `dbt deps` works, an OIDC service user, a task graph, three GitHub Actions workflows. Every line came from Snowflake's own tutorials. Snowflake's tutorial even grants ACCOUNTADMIN to the CI user; we scoped it down. That's a decision your team now owns."
 
 Scroll `.github/workflows/snow_pr_slim_ci.yml` for 10 seconds. Point at `SYSTEM$DBT_GET_LAST_SUCCESSFUL_RUN_TARGET`.
 
@@ -97,7 +97,7 @@ Point at the `UpcomingReferenceDeprecation` warning in the CI log.
 
 ## 7:30 to 8:00. Close
 
-> "Snowflake runs the warehouse either way. The decision is the control plane: support from the team that builds dbt, dbt's roadmap and governance features as they ship, and none of these 280 lines to maintain."
+> "Snowflake runs the warehouse either way. The decision is the control plane: support from the team that builds dbt, dbt's roadmap and governance features as they ship, and none of these 300 lines to maintain."
 
 Leave them with three questions:
 

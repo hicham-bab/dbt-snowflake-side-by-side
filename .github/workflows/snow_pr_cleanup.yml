@@ -13,13 +13,15 @@ permissions:
 
 jobs:
   cleanup:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     environment: prod
     env:
       SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
     steps:
       - name: Install Snowflake CLI
-        uses: snowflakedb/snowflake-cli-action@v2.0
+        uses: snowflakedb/snowflake-cli-action@v2.0.3
         with:
           use-oidc: true
-      - run: snow sql -x -q "DROP DATABASE IF EXISTS ATLAS_SNOW_CI_PR_${{ github.event.number }};"
+          cli-version: "3.29.0"
+      - run: snow sql -x --role ATLAS_SNOW_CI_ROLE -q "DROP DATABASE IF EXISTS ATLAS_SNOW_CI_PR_${{ github.event.number }}"

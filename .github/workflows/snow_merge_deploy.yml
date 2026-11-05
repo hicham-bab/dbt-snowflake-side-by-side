@@ -1,5 +1,7 @@
 # dbt Projects on Snowflake: deploy to prod on merge to main, then run.
 # Adapted from github.com/rachaelgfriedman/snow_dbt_projects_demo (pr_merged.yml).
+# Objects are deployed AS the prod role so Snowflake Tasks (05_tasks.sql),
+# which run as that role, own and can execute them.
 name: "Snowflake | Deploy to prod"
 run-name: "Deploy ${{ github.sha }} by ${{ github.actor }}"
 on:
@@ -12,8 +14,13 @@ permissions:
   contents: read
   id-token: write
 
+concurrency:
+  group: snow-deploy-prod
+  cancel-in-progress: false     # never cancel a prod deploy halfway
+
 env:
   DBT_VERSION: "2.0.0"
+  PROD_ROLE: ATLAS_SNOW_PROD_ROLE
 
 jobs:
   deploy:
@@ -25,11 +32,14 @@ jobs:
       SNOWFLAKE_SCHEMA: ${{ vars.SNOWFLAKE_SCHEMA }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
 
       - name: Install Snowflake CLI
-        uses: snowflakedb/snowflake-cli-action@v2.0
+        uses: snowflakedb/snowflake-cli-action@v2.0.3
         with:
           use-oidc: true
+          cli-version: "3.29.0"
 
       - run: snow connection test -x
 
@@ -37,15 +47,15 @@ jobs:
       - name: Deploy dbt project objects
         run: |
           for p in atlas_platform atlas_finance; do
-            snow dbt deploy $p --source ./snowflake/$p \
+            snow dbt deploy $p --source ./snowflake/$p --role ${PROD_ROLE} \
               --default-target prod --dbt-version ${DBT_VERSION} \
               --external-access-integration DBT_EXT_ACCESS \
               --git-commit "${{ github.sha }}" --git-branch main --force -x
           done
 
       - name: Build atlas_platform (prod)
-        run: snow dbt execute -x atlas_platform build --target prod
+        run: snow dbt execute -x --role ${PROD_ROLE} atlas_platform build --target prod
 
       # If the platform renamed a column finance reads, this is where you find out.
       - name: Build atlas_finance (prod)
-        run: snow dbt execute -x atlas_finance build --target prod
+        run: snow dbt execute -x --role ${PROD_ROLE} atlas_finance build --target prod

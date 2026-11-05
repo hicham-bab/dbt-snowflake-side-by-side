@@ -9,7 +9,7 @@ Built for field teams (SAs, partner SAs, SIs) who get asked "why not just use db
 | Time | Beat | The point |
 |---|---|---|
 | 0:00 | Framing | Snowflake runs the SQL either way. The question is who owns the control plane. |
-| 0:45 | 1. Setup weight | ~280 lines across 12 files to own on Snowflake vs one 30-line SQL file and a few clicks. Parity, not turnkey. |
+| 0:45 | 1. Setup weight | ~300 lines across 12 files to own on Snowflake vs one 30-line SQL file and a few clicks. Parity, not turnkey. |
 | 2:15 | 2. Same PR, two CIs | GitHub Actions log vs a run page with lineage and dbt compare. |
 | 4:15 | 3. Guardrails | A prod picker in the workspace vs an IDE bound to dev, branch required. |
 | 5:30 | 4. Mesh breaking change | Rename a column: Snowflake finance breaks in prod; dbt platform contract catches it in producer CI, versions keep finance green. |
