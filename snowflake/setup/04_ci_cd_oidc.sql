@@ -19,7 +19,7 @@ CREATE USER IF NOT EXISTS GITHUB_ACTIONS_ATLAS
   WORKLOAD_IDENTITY = (
     TYPE = OIDC
     ISSUER = 'https://token.actions.githubusercontent.com'
-    SUBJECT = 'repo:<YOUR_GITHUB_ORG>/dbt-platform-vs-snowflake-dbt-projects:environment:prod'
+    SUBJECT = 'repo:<YOUR_GITHUB_ORG>/dbt-snowflake-side-by-side:environment:prod'
   )
   DEFAULT_ROLE = ATLAS_SNOW_CI_ROLE
   DEFAULT_WAREHOUSE = ATLAS_WH

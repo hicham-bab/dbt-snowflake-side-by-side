@@ -1,4 +1,4 @@
-# dbt platform vs dbt Projects on Snowflake: side-by-side demo
+# dbt platform and dbt Projects on Snowflake, side by side
 
 An 8-minute, replicable demo that runs **the same dbt project, on the same Snowflake account, with the same dbt engine** two ways: on dbt Projects on Snowflake and on the dbt platform. The only variable is the control plane.
 

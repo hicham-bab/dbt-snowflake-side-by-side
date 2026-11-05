@@ -4,7 +4,7 @@ You need: a Snowflake account where you can use ACCOUNTADMIN (a trial works), a 
 
 ## 1. Fork the repo
 
-Fork `dbt-platform-vs-snowflake-dbt-projects` into your GitHub org. Everywhere you see `<YOUR_GITHUB_ORG>` or `<DEMO_USER>` in `snowflake/setup/` and `dbt_platform/setup/`, replace it.
+Fork `dbt-snowflake-side-by-side` into your GitHub org. Everywhere you see `<YOUR_GITHUB_ORG>` or `<DEMO_USER>` in `snowflake/setup/` and `dbt_platform/setup/`, replace it.
 
 ## Before you start: two gotchas
 

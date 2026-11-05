@@ -1,4 +1,4 @@
-# Demo script: dbt platform vs dbt Projects on Snowflake (8 minutes)
+# Demo script: dbt platform and dbt Projects on Snowflake, side by side (8 minutes)
 
 Same data, same models, same dbt Core v2 engine, same Snowflake warehouse. The only variable is the control plane. That is the whole point: do not let this turn into "Snowflake bad". Snowflake runs the SQL on both sides.
 

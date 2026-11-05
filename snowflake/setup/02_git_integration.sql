@@ -31,7 +31,7 @@ GRANT USAGE ON SCHEMA ATLAS_SNOW_ADMIN.INTEGRATIONS TO ROLE ATLAS_SNOW_DEV_ROLE;
 GRANT READ ON SECRET ATLAS_SNOW_ADMIN.INTEGRATIONS.GIT_PAT_<DEVELOPER> TO ROLE ATLAS_SNOW_DEV_ROLE;
 
 -- Then, in Snowsight: Projects > Workspaces > From Git repository
---   URL: https://github.com/<YOUR_GITHUB_ORG>/dbt-platform-vs-snowflake-dbt-projects
+--   URL: https://github.com/<YOUR_GITHUB_ORG>/dbt-snowflake-side-by-side
 --   API integration: ATLAS_GIT_API_INTEGRATION, secret: GIT_PAT_<DEVELOPER>
 -- Note: Git is optional on this side. A workspace or a dbt project object can be
 -- created without any repository at all.
