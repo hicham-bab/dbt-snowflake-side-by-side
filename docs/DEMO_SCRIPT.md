@@ -77,7 +77,7 @@ Show PR `demo/breaking-change-snowflake`: both Slim CI checks green.
 
 > "Platform CI is green: it only selects what changed in its own project. Finance CI is green: nothing changed in finance."
 
-Show the `Snowflake | Deploy to prod` run after merge: `atlas_platform` succeeded, `atlas_finance` failed with `invalid identifier 'ORDER_LEVEL_DISCOUNT'`.
+Show the `Snowflake | Deploy to prod` run after merge: `atlas_platform` succeeded (110 of 110), `atlas_finance` failed in `fct_revenue_daily` with `invalid identifier 'ORDER_LEVEL_DISCOUNT'`.
 
 > "You find out in production, from the consumer, after the producer shipped. Or worse: if finance had used `select *`, nothing fails and the numbers just go wrong."
 
@@ -89,7 +89,9 @@ PR `demo/breaking-change-dbt-platform`: red.
 
 PR `demo/versioned-change-dbt-platform`: green.
 
-> "The right way: ship `v2` with the new name, keep `v1` with a deprecation date. Finance stays on `v1`, untouched, and migrates on its own timeline. The platform team can see exactly who still uses `v1`."
+> "The right way: ship `v2` with the new name, keep `v1` with a deprecation date. Finance stays on `v1`, untouched, and migrates on its own timeline. The platform team can see exactly who still uses `v1`, and every model that still references it gets a deprecation warning at build time."
+
+Point at the `UpcomingReferenceDeprecation` warning in the CI log.
 
 **So what:** technical, cross-project refs, contracts, versions, lineage across projects; business, domains move independently without breaking each other, one trusted source of truth.
 

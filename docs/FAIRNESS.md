@@ -29,6 +29,12 @@ This demo only works if a Snowflake-savvy person in the room can't catch us over
 - "Contracts don't work on Snowflake." Within a single project they parse and enforce. The gap is consumers in other projects.
 - "dbt platform roles don't matter." They do. We split dev and job roles on the dbt platform side too (`dbt_platform/setup/01_snowflake_for_dbt_platform.sql`). The difference is the IDE is bound to the Development environment.
 
+## Verified on a live account (2026-11-05)
+
+- Snowflake side, natively (`snow dbt deploy` + `snow dbt execute`, dbt 2.0.0): producer 110/110, finance 16/16. After the rename, the producer stays green and finance fails in `fct_revenue_daily` with `invalid identifier 'ORDER_LEVEL_DISCOUNT'`.
+- dbt platform producer (dbt Core v2 against the same account): green on `main` and same-PR; the breaking branch fails with `DISCOUNT_AMOUNT ... missing in contract`; the versioned branch is green with two `UpcomingReferenceDeprecation` warnings.
+- Not yet exercised: the GitHub Actions workflows and the dbt platform UI jobs (CI, compare, Mesh consumer). Run them once while following `REPLICATE.md`.
+
 ## Choices we made that you should know about
 
 - Both sides read one shared raw database (`setup/00_shared_raw.sql`), which isn't counted in setup weight.
