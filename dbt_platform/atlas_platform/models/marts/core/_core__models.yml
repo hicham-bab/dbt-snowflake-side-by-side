@@ -204,6 +204,9 @@ models:
         data_type: date
       - name: has_return
         data_type: boolean
+      - name: is_high_value_order
+        data_type: boolean
+        description: True when gross revenue is 250 or more.
       - name: realized_revenue
         data_type: number(18,2)
         description: Net revenue minus approved refunds.
