@@ -1,5 +1,5 @@
 # dbt Projects on Snowflake: account and user are ignored (the session runs as you).
-# One database per environment; DBT_DATABASE is set per run (see env.yml and CI).
+# One database per environment. Dev follows DBT_DATABASE (env.yml, per-PR CI); prod is fixed.
 atlas_finance:
   target: dev
   outputs:
@@ -18,6 +18,6 @@ atlas_finance:
       user: '_'
       role: "{{ env_var('DBT_ROLE', 'ATLAS_SNOW_PROD_ROLE') }}"
       warehouse: "{{ env_var('DBT_WAREHOUSE', 'ATLAS_WH') }}"
-      database: "{{ env_var('DBT_DATABASE', 'ATLAS_SNOW_PROD') }}"
+      database: ATLAS_SNOW_PROD          # fixed: prod never follows DBT_DATABASE
       schema: prod
       threads: 8

@@ -1,46 +1,23 @@
 {{
     config(
-        materialized='incremental',
+        materialized='table',
         schema='marts_core',
-        unique_key='order_id',
-        incremental_strategy='merge',
         cluster_by=['order_date', 'store_id'],
-        tags=['mart', 'core', 'published'],
-        on_schema_change='fail'
+        tags=['mart', 'core', 'published']
     )
 }}
 
 /*
-  Materialization: INCREMENTAL (merge strategy).
-  Processes only new or updated orders since the last run.
+  Materialization: TABLE, rebuilt on every run (300K rows, seconds on XS).
   cluster_by ['order_date', 'store_id'] enables efficient pruning on Snowflake.
 
-  This is the central fact table for the platform, consumed by both
+  This is the central fact table for the platform, consumed by
   atlas_finance, which re-declares it as a source (no cross-project ref on Snowflake).
 */
-
-{% if is_incremental() %}
--- Compute cutoff in a standalone CTE to avoid correlated aggregate error
--- when int_orders_enriched is inlined as an ephemeral CTE by Snowflake.
-WITH incremental_cutoff AS (
-    SELECT DATEADD('day', -3, MAX(_loaded_at)) AS cutoff
-    FROM {{ this }}
-),
-
-orders AS (
-    SELECT o.*
-    FROM {{ ref('int_orders_enriched') }} o
-    CROSS JOIN incremental_cutoff ic
-    WHERE o._loaded_at >= ic.cutoff
-)
-
-{% else %}
 
 WITH orders AS (
     SELECT * FROM {{ ref('int_orders_enriched') }}
 )
-
-{% endif %}
 
 SELECT
     cast(order_id as number(38,0))                     AS order_id,
