@@ -7,8 +7,8 @@ atlas_finance:
       type: snowflake
       account: '_'
       user: '_'
-      role: ATLAS_SNOW_DEV_ROLE
-      warehouse: ATLAS_WH
+      role: "{{ env_var('DBT_ROLE', 'ATLAS_SNOW_DEV_ROLE') }}"
+      warehouse: "{{ env_var('DBT_WAREHOUSE', 'ATLAS_WH') }}"
       database: "{{ env_var('DBT_DATABASE', 'ATLAS_SNOW_DEV') }}"
       schema: dev
       threads: 8
@@ -16,8 +16,8 @@ atlas_finance:
       type: snowflake
       account: '_'
       user: '_'
-      role: ATLAS_SNOW_PROD_ROLE
-      warehouse: ATLAS_WH
+      role: "{{ env_var('DBT_ROLE', 'ATLAS_SNOW_PROD_ROLE') }}"
+      warehouse: "{{ env_var('DBT_WAREHOUSE', 'ATLAS_WH') }}"
       database: "{{ env_var('DBT_DATABASE', 'ATLAS_SNOW_PROD') }}"
       schema: prod
       threads: 8

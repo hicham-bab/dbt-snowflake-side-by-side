@@ -6,9 +6,14 @@ You need: a Snowflake account where you can use ACCOUNTADMIN (a trial works), a 
 
 Fork `dbt-platform-vs-snowflake-dbt-projects` into your GitHub org. Everywhere you see `<YOUR_GITHUB_ORG>` or `<DEMO_USER>` in `snowflake/setup/` and `dbt_platform/setup/`, replace it.
 
+## Before you start: two gotchas
+
+- **Unique project names.** If your dbt platform account already has a project called `atlas_platform` (from another demo), rename these projects (`name:` in `dbt_project.yml`, plus `dependencies.yml` and the `ref('atlas_platform', ...)` calls in finance). dbt State and Mesh key on the project name, and a duplicate will defer to or clone from the wrong project.
+- **Existing roles or warehouse.** The Snowflake-side profiles read `DBT_ROLE` and `DBT_WAREHOUSE` env vars (defaults `ATLAS_SNOW_*_ROLE`, `ATLAS_WH`). Set them in `env.yml` if you reuse what you already have.
+
 ## 2. Shared raw data (both sides, 5 min)
 
-Run `setup/00_shared_raw.sql` in a Snowsight worksheet. It creates warehouse `ATLAS_WH` (XS) and `ATLAS_RAW.ECOMMERCE` with about 300K orders, 750K order lines, 12K customers.
+Run `setup/00_shared_raw.sql` in a Snowsight worksheet. It creates warehouse `ATLAS_WH` (XS) and `ATLAS_RAW.ECOMMERCE` with about 300K orders, 900K order lines, 12K customers (about 15 seconds).
 
 ## 3. dbt Projects on Snowflake side (45 min)
 
