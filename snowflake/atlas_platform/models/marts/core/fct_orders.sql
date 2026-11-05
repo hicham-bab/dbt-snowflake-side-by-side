@@ -54,6 +54,7 @@ SELECT
     cast(return_reason as varchar)                     AS return_reason,
     cast(return_date as date)                          AS return_date,
     cast(has_return as boolean)                        AS has_return,
+    cast(gross_revenue >= 250 as boolean)              AS is_high_value_order,
 
     -- Revenue net of returns
     cast(
