@@ -109,6 +109,21 @@ models:
       group: core_platform
       contract:
         enforced: true
+    latest_version: 1
+    versions:
+      - v: 1
+        defined_in: fct_orders
+        deprecation_date: 2027-03-31
+        config:
+          alias: fct_orders
+      - v: 2
+        description: Same as v1 with order_level_discount renamed to discount_amount. Prerelease until consumers migrate.
+        columns:
+          - include: all
+            exclude: [order_level_discount]
+          - name: discount_amount
+            data_type: number(10,2)
+            description: Order-level discount amount (was order_level_discount in v1).
     columns:
       - name: order_id
         data_type: number(38,0)
