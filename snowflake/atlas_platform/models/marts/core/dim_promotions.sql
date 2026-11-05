@@ -1,0 +1,26 @@
+{{
+    config(
+        materialized='table',
+        schema='marts_core',
+        tags=['mart', 'core', 'published']
+    )
+}}
+
+-- Materialization: TABLE, promotion catalog changes infrequently.
+-- Read by the finance project.
+
+SELECT
+    promotion_id,
+    promotion_code,
+    promotion_name,
+    discount_type,
+    discount_value,
+    min_order_amount,
+    start_date,
+    end_date,
+    channel,
+    is_stackable,
+    max_redemptions,
+    is_active,
+    CURRENT_TIMESTAMP()                                 AS dbt_updated_at
+FROM {{ ref('catalog_promotions') }}

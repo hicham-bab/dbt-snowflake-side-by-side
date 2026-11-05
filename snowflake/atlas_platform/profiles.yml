@@ -1,0 +1,23 @@
+# dbt Projects on Snowflake: account and user are ignored (the session runs as you).
+# One database per environment; DBT_DATABASE is set per run (see env.yml and CI).
+atlas_platform:
+  target: dev
+  outputs:
+    dev:
+      type: snowflake
+      account: '_'
+      user: '_'
+      role: ATLAS_SNOW_DEV_ROLE
+      warehouse: ATLAS_WH
+      database: "{{ env_var('DBT_DATABASE', 'ATLAS_SNOW_DEV') }}"
+      schema: dev
+      threads: 8
+    prod:
+      type: snowflake
+      account: '_'
+      user: '_'
+      role: ATLAS_SNOW_PROD_ROLE
+      warehouse: ATLAS_WH
+      database: "{{ env_var('DBT_DATABASE', 'ATLAS_SNOW_PROD') }}"
+      schema: prod
+      threads: 8

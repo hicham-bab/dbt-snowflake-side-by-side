@@ -1,0 +1,48 @@
+-- =============================================================================
+-- 01_snowflake_for_dbt_platform.sql  (dbt platform side)
+-- The only Snowflake setup the dbt platform side needs: a role, a service user
+-- for deployment/CI jobs, and databases. Counted in scripts/setup_weight.sh so
+-- the comparison stays honest. Run as SECURITYADMIN + SYSADMIN.
+-- =============================================================================
+
+USE ROLE SECURITYADMIN;
+CREATE ROLE IF NOT EXISTS ATLAS_DBTP_DEV_ROLE COMMENT = 'dbt platform developers (Development environment)';
+CREATE ROLE IF NOT EXISTS ATLAS_DBTP_JOB_ROLE COMMENT = 'dbt platform CI + deployment jobs';
+GRANT ROLE ATLAS_DBTP_DEV_ROLE TO ROLE SYSADMIN;
+GRANT ROLE ATLAS_DBTP_JOB_ROLE TO ROLE SYSADMIN;
+GRANT ROLE ATLAS_DBTP_DEV_ROLE TO USER <DEMO_USER>;        -- your dev credentials in dbt platform
+
+-- Service user for CI + deployment environments (key pair; paste the public key)
+CREATE USER IF NOT EXISTS ATLAS_DBTP_SERVICE
+  TYPE = SERVICE
+  DEFAULT_ROLE = ATLAS_DBTP_JOB_ROLE
+  DEFAULT_WAREHOUSE = ATLAS_WH
+  RSA_PUBLIC_KEY = '<public_key>';
+GRANT ROLE ATLAS_DBTP_JOB_ROLE TO USER ATLAS_DBTP_SERVICE;
+
+USE ROLE SYSADMIN;
+CREATE DATABASE IF NOT EXISTS ATLAS_DBTP_DEV;    -- per-developer schemas (dbt_<name>)
+CREATE DATABASE IF NOT EXISTS ATLAS_DBTP_CI;     -- per-PR schemas, created and dropped by dbt platform
+CREATE DATABASE IF NOT EXISTS ATLAS_DBTP_PROD;
+GRANT ALL ON DATABASE ATLAS_DBTP_DEV  TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT ALL ON DATABASE ATLAS_DBTP_CI   TO ROLE ATLAS_DBTP_JOB_ROLE;
+GRANT ALL ON DATABASE ATLAS_DBTP_PROD TO ROLE ATLAS_DBTP_JOB_ROLE;
+
+-- Developers read prod (defer, Catalog) but cannot write it
+GRANT USAGE ON DATABASE ATLAS_DBTP_PROD TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT USAGE ON FUTURE SCHEMAS IN DATABASE ATLAS_DBTP_PROD TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT SELECT ON FUTURE TABLES IN DATABASE ATLAS_DBTP_PROD TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT SELECT ON FUTURE VIEWS IN DATABASE ATLAS_DBTP_PROD TO ROLE ATLAS_DBTP_DEV_ROLE;
+
+GRANT USAGE ON WAREHOUSE ATLAS_WH TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT USAGE ON WAREHOUSE ATLAS_WH TO ROLE ATLAS_DBTP_JOB_ROLE;
+GRANT USAGE ON DATABASE ATLAS_RAW TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT USAGE ON DATABASE ATLAS_RAW TO ROLE ATLAS_DBTP_JOB_ROLE;
+GRANT USAGE ON SCHEMA ATLAS_RAW.ECOMMERCE TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT USAGE ON SCHEMA ATLAS_RAW.ECOMMERCE TO ROLE ATLAS_DBTP_JOB_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA ATLAS_RAW.ECOMMERCE TO ROLE ATLAS_DBTP_DEV_ROLE;
+GRANT SELECT ON ALL TABLES IN SCHEMA ATLAS_RAW.ECOMMERCE TO ROLE ATLAS_DBTP_JOB_ROLE;
+
+-- Role separation matters on both sides. The difference: in dbt platform a
+-- developer's Studio session is bound to the Development environment; there is
+-- no environment picker that points an IDE run at Production.

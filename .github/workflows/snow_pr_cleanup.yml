@@ -1,0 +1,25 @@
+# dbt Projects on Snowflake: drop the PR database when the PR closes.
+# Not in the Snowflake tutorial; without it, PR databases pile up.
+name: "Snowflake | PR cleanup"
+on:
+  pull_request:
+    types: [closed]
+    branches: [main]
+    paths: ["snowflake/**"]
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+    steps:
+      - name: Install Snowflake CLI
+        uses: snowflakedb/snowflake-cli-action@v2.0
+        with:
+          use-oidc: true
+      - run: snow sql -x -q "DROP DATABASE IF EXISTS ATLAS_SNOW_CI_PR_${{ github.event.number }};"

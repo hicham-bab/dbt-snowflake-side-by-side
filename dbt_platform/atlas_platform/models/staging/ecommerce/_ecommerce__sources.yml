@@ -1,0 +1,48 @@
+version: 2
+
+sources:
+  - name: ecommerce_raw
+    description: >
+      Raw e-commerce data for Atlas Commerce. Both sides of the demo read the same
+      tables, created once by setup/00_shared_raw.sql.
+    database: "{{ env_var('ATLAS_RAW_DATABASE', 'ATLAS_RAW') }}"
+    schema: ecommerce
+    config:
+      loaded_at_field: _loaded_at
+      freshness:
+        warn_after: {count: 24, period: hour}
+    tables:
+      - name: raw_customers
+        description: 12,000 synthetic customer profiles.
+        columns:
+          - name: customer_id
+            tests:
+              - unique
+              - not_null
+      - name: raw_orders
+        description: One row per order, about 300K rows, June 2026 to June 2027.
+        columns:
+          - name: order_id
+            tests:
+              - unique
+              - not_null
+      - name: raw_order_items
+        description: One row per order line (1 to 5 per order).
+        columns:
+          - name: order_item_id
+            tests:
+              - unique
+              - not_null
+          - name: order_id
+            tests:
+              - relationships:
+                  arguments:
+                    to: source('ecommerce_raw', 'raw_orders')
+                    field: order_id
+      - name: raw_returns
+        description: Returns for orders with status = 'returned'.
+        columns:
+          - name: return_id
+            tests:
+              - unique
+              - not_null

@@ -1,0 +1,20 @@
+name: atlas_finance
+version: '1.0.0'
+require-dbt-version: [">=1.9.0"]
+profile: atlas_finance
+
+model-paths: ["models"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+clean-targets: [target, dbt_packages]
+
+models:
+  atlas_finance:
+    intermediate:
+      +materialized: ephemeral
+      +tags: ["intermediate", "finance"]
+    marts:
+      +materialized: table
+      +schema: marts_finance
+      +tags: ["mart", "finance"]

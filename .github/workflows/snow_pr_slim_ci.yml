@@ -1,0 +1,66 @@
+# dbt Projects on Snowflake: Slim CI on every PR (you write it, you own it).
+# Adapted from github.com/rachaelgfriedman/snow_dbt_projects_demo and the Snowflake
+# dbt state integration doc. The dbt platform side needs none of this file.
+name: "Snowflake | PR Slim CI"
+run-name: "Slim CI for PR #${{ github.event.number }} by ${{ github.actor }}"
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+    branches: [main]
+    paths: ["snowflake/**"]
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DBT_VERSION: "2.0.0"
+  PR_DB: ATLAS_SNOW_CI_PR_${{ github.event.number }}
+
+jobs:
+  slim-ci:
+    name: "Slim CI: ${{ matrix.project }}"
+    runs-on: ubuntu-latest
+    environment: prod            # must match the OIDC subject in 04_ci_cd_oidc.sql
+    strategy:
+      fail-fast: false
+      matrix:
+        project: [atlas_platform, atlas_finance]
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_DATABASE: ${{ vars.SNOWFLAKE_DATABASE }}   # ATLAS_SNOW_PROD
+      SNOWFLAKE_SCHEMA: ${{ vars.SNOWFLAKE_SCHEMA }}       # DBT_OBJECTS
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Snowflake CLI
+        uses: snowflakedb/snowflake-cli-action@v2.0
+        with:
+          use-oidc: true
+
+      - run: snow connection test -x
+
+      # Snowflake's tutorial clones prod per PR. With defer we only need an empty
+      # database to hold the models this PR changed.
+      - name: Create PR database
+        run: snow sql -x -q "CREATE DATABASE IF NOT EXISTS ${PR_DB}; CREATE SCHEMA IF NOT EXISTS ${PR_DB}.DBT_OBJECTS;"
+
+      - name: Deploy a throwaway dbt project object for this PR
+        run: |
+          snow dbt deploy ${{ matrix.project }} \
+            --source ./snowflake/${{ matrix.project }} \
+            --database ${PR_DB} --schema DBT_OBJECTS \
+            --dbt-version ${DBT_VERSION} \
+            --external-access-integration DBT_EXT_ACCESS \
+            --no-auto-compile --force -x
+
+      # state:modified+ against the last successful prod run of the SAME project.
+      # A change in atlas_platform never selects anything in atlas_finance.
+      - name: Build modified models + downstream (defer to prod)
+        run: |
+          snow dbt execute -x \
+            --database ${PR_DB} --schema DBT_OBJECTS \
+            --import "SYSTEM\$DBT_GET_LAST_SUCCESSFUL_RUN_TARGET('ATLAS_SNOW_PROD.DBT_OBJECTS.${{ matrix.project }}') as state" \
+            --env-vars "{\"DBT_DATABASE\": \"${PR_DB}\"}" \
+            ${{ matrix.project }} \
+            build --target dev --defer --state ./imports/state --select state:modified+

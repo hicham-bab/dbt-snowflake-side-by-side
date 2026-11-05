@@ -1,0 +1,42 @@
+name: atlas_platform
+version: '1.0.0'
+require-dbt-version: [">=1.9.0"]
+profile: atlas_platform
+
+model-paths: ["models"]
+seed-paths: ["seeds"]
+macro-paths: ["macros"]
+test-paths: ["tests"]
+
+clean-targets: [target, dbt_packages]
+
+models:
+  atlas_platform:
+    +group: core_platform
+    staging:
+      +materialized: view
+      +access: private
+      ecommerce:
+        +schema: staging_ecommerce
+        +tags: ["staging", "ecommerce"]
+    intermediate:
+      +materialized: ephemeral
+      +access: private
+      +tags: ["intermediate"]
+    marts:
+      core:
+        +materialized: table
+        +schema: marts_core
+        +tags: ["mart", "core", "published"]
+      inventory:
+        +materialized: table
+        +schema: marts_inventory
+        +tags: ["mart", "inventory"]
+
+seeds:
+  atlas_platform:
+    +schema: seeds
+
+vars:
+  start_date: '2026-06-01'
+  end_date: '2027-06-15'

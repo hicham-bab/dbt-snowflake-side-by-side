@@ -1,0 +1,15 @@
+version: 2
+
+# No cross-project refs on dbt Projects on Snowflake, so the finance team
+# re-declares the platform team's marts as plain sources. The platform team
+# has no record that finance depends on these tables or columns.
+sources:
+  - name: atlas_platform
+    description: Tables built by the atlas_platform project (owned by another team).
+    database: "{{ env_var('PLATFORM_DATABASE', 'ATLAS_SNOW_PROD') }}"
+    schema: "{{ env_var('PLATFORM_SCHEMA', 'prod_marts_core') }}"
+    tables:
+      - name: fct_orders
+      - name: fct_order_items
+      - name: dim_customers
+      - name: dim_dates

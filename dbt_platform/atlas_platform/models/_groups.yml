@@ -1,0 +1,7 @@
+version: 2
+
+groups:
+  - name: core_platform
+    owner:
+      name: Core Data Platform team
+      email: data-platform@atlas-commerce.example

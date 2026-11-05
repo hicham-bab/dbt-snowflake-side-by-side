@@ -1,0 +1,51 @@
+# dbt Projects on Snowflake: deploy to prod on merge to main, then run.
+# Adapted from github.com/rachaelgfriedman/snow_dbt_projects_demo (pr_merged.yml).
+name: "Snowflake | Deploy to prod"
+run-name: "Deploy ${{ github.sha }} by ${{ github.actor }}"
+on:
+  push:
+    branches: [main]
+    paths: ["snowflake/**"]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  DBT_VERSION: "2.0.0"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: prod
+    env:
+      SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+      SNOWFLAKE_DATABASE: ${{ vars.SNOWFLAKE_DATABASE }}
+      SNOWFLAKE_SCHEMA: ${{ vars.SNOWFLAKE_SCHEMA }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Snowflake CLI
+        uses: snowflakedb/snowflake-cli-action@v2.0
+        with:
+          use-oidc: true
+
+      - run: snow connection test -x
+
+      # Order matters and is encoded by hand: producer first, then consumer.
+      - name: Deploy dbt project objects
+        run: |
+          for p in atlas_platform atlas_finance; do
+            snow dbt deploy $p --source ./snowflake/$p \
+              --default-target prod --dbt-version ${DBT_VERSION} \
+              --external-access-integration DBT_EXT_ACCESS \
+              --git-commit "${{ github.sha }}" --git-branch main --force -x
+          done
+
+      - name: Build atlas_platform (prod)
+        run: snow dbt execute -x atlas_platform build --target prod
+
+      # If the platform renamed a column finance reads, this is where you find out.
+      - name: Build atlas_finance (prod)
+        run: snow dbt execute -x atlas_finance build --target prod
